@@ -1,7 +1,7 @@
 seed: 42
 train:
   test_size: 0.2
-  logreg_C: 1.0
+  logreg_C: 10.0
   logreg_max_iter: 1000
   rf_n_estimators: 200
   rf_max_depth: 8
