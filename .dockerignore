@@ -1,0 +1,10 @@
+.git
+.venv
+.dvc
+dvc-remote
+artifacts
+__pycache__
+*.pyc
+.env
+.vscode
+*.md
