@@ -9,6 +9,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+import redis
 import sklearn
 from fastapi import FastAPI
 from pydantic import Field, create_model
@@ -46,7 +47,8 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 rds = None
 if REDIS_HOST:
-    rds = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, socket_connect_timeout=1, socket_timeout=1)
+    rds = redis.Redis(host=REDIS_HOST, port=REDIS_PORT,
+                      socket_connect_timeout=1, socket_timeout=1)
     logger.info("Redis counting enabled at %s:%s", REDIS_HOST, REDIS_PORT)
 
 
