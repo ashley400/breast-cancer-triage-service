@@ -1,6 +1,8 @@
+# edit 2
 import json
 import logging
 import os
+import redis
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -40,6 +42,12 @@ PredictRequest = create_model(
 )
 
 state = {}
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+rds = None
+if REDIS_HOST:
+    rds = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, socket_connect_timeout=1, socket_timeout=1)
+    logger.info("Redis counting enabled at %s:%s", REDIS_HOST, REDIS_PORT)
 
 
 @asynccontextmanager
@@ -73,6 +81,11 @@ def predict(req: PredictRequest):
     p = float(state["model"].predict_proba(x)[0, state["malignant_idx"]])
     label = "malignant" if p >= DECISION_THRESHOLD else "benign"
     logger.info("prediction label=%s malignant_probability=%.4f", label, p)
+    if rds is not None:
+        try:
+            rds.incr("predictions")
+        except Exception as e:
+            logger.warning("Redis unavailable, not counting: %s", e)
     return {
         "label": label,
         "malignant_probability": round(p, 4),
@@ -95,7 +108,15 @@ def model_info():
     }
 
 
+
 @app.get("/stats")
 def stats():
-    # Placeholder until Milestone 4 (Redis counter)
+    if rds is None:
+        return {"predictions_served": None, "redis_enabled": False}
+    try:
+        value = int(rds.get("predictions") or 0)
+        return {"predictions_served": value, "redis_enabled": True}
+    except Exception as e:
+        logger.warning("Redis unavailable: %s", e)
+        return {"predictions_served": None, "redis_enabled": True, "error": "redis unreachable"}
     return {"predictions_served": None, "redis_enabled": False}
